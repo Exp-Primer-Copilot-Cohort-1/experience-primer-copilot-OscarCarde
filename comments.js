@@ -1,42 +1,31 @@
-// create a web server
+// Create a web server
+// Create a route for the comments page
+// The comments page should display the comments from the comments.json file
+// The comments should be displayed as a list of comments
+// Each comment should display the comment and the name of the person who posted the comment
+// The comments should be displayed in reverse chronological order
 
-const http = require('http');
+const express = require('express');
+const app = express();
 const fs = require('fs');
 const path = require('path');
 
-const server = http.createServer((request, response) => {
-    console.log(`Request for ${request.url} by method ${request.method}`);
-    if (request.method === 'GET') {
-        let fileUrl;
-        if (request.url === '/') fileUrl = '/index.html';
-        else fileUrl = request.url;
-        let filePath = path.resolve('./public' + fileUrl);
-        const fileExt = path.extname(filePath);
-        if (fileExt === '.html') {
-            fs.exists(filePath, (exists) => {
-                if (!exists) {
-                    response.statusCode = 404;
-                    response.setHeader('Content-Type', 'text/html');
-                    response.end(`<html><body><h1>Error 404: ${fileUrl} not found</h1></body></html>`);
-                    return;
-                }
-                response.statusCode = 200;
-                response.setHeader('Content-Type', 'text/html');
-                fs.createReadStream(filePath).pipe(response);
-            });
-        } else {
-            response.statusCode = 404;
-            response.setHeader('Content-Type', 'text/html');
-            response.end(`<html><body><h1>Error 404: ${fileUrl} not an HTML file</h1></body></html>`);
-        }
+app.get('/comments', (req, res) => {
+  fs.readFile(path.join(__dirname, 'comments.json'), 'utf8', (err, data) => {
+    if (err) {
+      res.status(500).send('Internal Server Error');
     } else {
-        response.statusCode = 404;
-        response.setHeader('Content-Type', 'text/html');
-        response.end(`<html><body><h1>Error 404: ${request.method} not supported</h1></body></html>`);
+      const comments = JSON.parse(data);
+      res.send(`
+        <h1>Comments</h1>
+        <ul>
+          ${comments.reverse().map(comment => `<li>${comment.name}: ${comment.comment}</li>`).join('')}
+        </ul>
+      `);
     }
+  });
 });
 
-server.listen(3000, () => {
-    console.log('Server running at http://localhost:3000');
+app.listen(3000, () => {
+  console.log('Server is listening on port 3000');
 });
-
